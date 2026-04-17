@@ -1,0 +1,16 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Petstore API", "description": "A sample API for managing pets in a pet store", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.petstore.example.com/v1" }],
+  "paths": {
+    "/pets": {
+      "get": { "operationId": "list_pets", "summary": "List all pets", "tags": ["pets"], "parameters": [{ "name": "limit", "in": "query", "required": false, "schema": { "type": "integer" } }, { "name": "species", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "A list of pets" } } },
+      "post": { "operationId": "create_pet", "summary": "Add a new pet", "tags": ["pets"], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["name", "species"], "properties": { "name": { "type": "string" }, "species": { "type": "string" }, "breed": { "type": "string" }, "age": { "type": "integer" }, "price": { "type": "number" } } } } } }, "responses": { "201": { "description": "Pet created" } } }
+    },
+    "/pets/{petId}": {
+      "get": { "operationId": "get_pet", "summary": "Get a pet by ID", "tags": ["pets"], "parameters": [{ "name": "petId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "A pet" } } },
+      "delete": { "operationId": "delete_pet", "summary": "Remove a pet", "tags": ["pets"], "parameters": [{ "name": "petId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "204": { "description": "Deleted" } } }
+    }
+  },
+  "components": { "securitySchemes": { "bearerAuth": { "type": "http", "scheme": "bearer" } } }
+}
