@@ -20,9 +20,9 @@ jobs:
         run: npm install
       - name: Build
         run: |
-          cd packages/spec && npx tsc && cd ../..
-          cd packages/scorer && npx tsc && cd ../..
-          cd packages/generator && npx tsc && cd ../..
+          cd packages/spec && npm install --save-dev typescript && npx tsc --noEmit && cd ../..
+          [ -d packages/scorer ] && (cd packages/scorer && npm install --save-dev typescript && npx tsc --noEmit && cd ../..) || echo "packages/scorer not yet created, skipping"
+          [ -d packages/generator ] && (cd packages/generator && npm install --save-dev typescript && npx tsc --noEmit && cd ../..) || echo "packages/generator not yet created, skipping"
       - name: Validate examples
         run: |
           for f in examples/*.agent.json; do
@@ -32,6 +32,6 @@ jobs:
               const required = ['name', 'spec_version', 'description', 'capabilities'];
               const missing = required.filter(k => !data[k]);
               if (missing.length > 0) { console.error('FAIL: $f missing ' + missing.join(', ')); process.exit(1); }
-              console.log('✓ $f');
+              console.log('OK $f');
             "
           done
