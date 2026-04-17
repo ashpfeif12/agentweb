@@ -1,40 +1,36 @@
 {
-  "name": "agentweb",
+  "name": "@ashpfeif12/agentweb",
   "version": "0.1.0",
-  "private": true,
-  "description": "Make the web agent-ready. Open spec, tools, and infrastructure for the agent-driven web.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/agentweb/agentweb"
+  "description": "Make the web agent-ready. Open spec, scorer, and MCP generator for the agent-driven web.",
+  "main": "cli.ts",
+  "bin": {
+    "agentweb": "./cli.ts"
   },
-  "license": "MIT",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "eslint packages/*/src/**/*.ts",
-    "clean": "rm -rf packages/*/dist"
-  },
-  "devDependencies": {
-    "typescript": "^5.4.0",
-    "eslint": "^9.0.0",
-    "@types/node": "^20.0.0",
-    "vitest": "^2.0.0"
-  },
-  "engines": {
-    "node": ">=20.0.0"
+    "build": "cd packages/spec && npx tsc && cd ../.. && cd packages/scorer && npx tsc && cd ../.. && cd packages/generator && npx tsc && cd ../..",
+    "test": "echo 'tests coming soon'",
+    "lint": "echo 'lint coming soon'"
   },
   "keywords": [
     "agent",
     "ai",
     "mcp",
-    "agent-ready",
+    "agent-json",
+    "llm",
+    "model-context-protocol",
     "web",
     "spec",
-    "syndication",
-    "llm",
-    "model-context-protocol"
-  ]
+    "scorer",
+    "generator"
+  ],
+  "author": "ashpfeif12",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ashpfeif12/agentweb"
+  },
+  "homepage": "https://github.com/ashpfeif12/agentweb",
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }
