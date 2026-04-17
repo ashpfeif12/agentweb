@@ -1,0 +1,35 @@
+{
+  "name": "@agentweb/scorer",
+  "version": "1.0.0",
+  "description": "Agent readiness scorer — analyze any website and get an agent-readiness score (0-100) with actionable recommendations.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agentweb-score": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentweb/spec": "workspace:*"
+  },
+  "keywords": [
+    "agent-readiness",
+    "scorer",
+    "seo",
+    "audit",
+    "agent",
+    "mcp"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentweb/agentweb",
+    "directory": "packages/scorer"
+  }
+}

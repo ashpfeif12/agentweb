@@ -1,0 +1,36 @@
+{
+  "name": "@agentweb/generator",
+  "version": "1.0.0",
+  "description": "MCP server generator — auto-generate deployable MCP servers from OpenAPI, GraphQL, or existing websites.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agentweb-generate": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentweb/spec": "workspace:*"
+  },
+  "keywords": [
+    "mcp",
+    "generator",
+    "openapi",
+    "graphql",
+    "model-context-protocol",
+    "agent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentweb/agentweb",
+    "directory": "packages/generator"
+  }
+}

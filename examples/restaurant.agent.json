@@ -1,0 +1,123 @@
+{
+  "name": "Riverside Bistro",
+  "version": "1.0.0",
+  "spec_version": "1.0",
+  "description": "Farm-to-table restaurant in Portland, OR. Seasonal menu, craft cocktails, weekend brunch. Seats 85. Outdoor patio available spring through fall.",
+  "capabilities": [
+    {
+      "name": "view_menu",
+      "description": "Browse current menu with prices, dietary info, and allergen warnings. Menu changes seasonally.",
+      "type": "query",
+      "tags": ["menu", "food", "dietary"]
+    },
+    {
+      "name": "make_reservation",
+      "description": "Book a table for a specific date, time, and party size. Supports special requests (birthday, anniversary, dietary needs).",
+      "type": "action",
+      "tags": ["booking", "reservation"]
+    },
+    {
+      "name": "check_availability",
+      "description": "Check table availability for a given date and party size without making a reservation.",
+      "type": "query",
+      "tags": ["availability"]
+    },
+    {
+      "name": "order_takeout",
+      "description": "Place a takeout or delivery order from the current menu. Estimated prep time included.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["takeout", "delivery", "order"]
+    }
+  ],
+  "actions": [
+    {
+      "name": "check_availability",
+      "description": "Check if tables are available",
+      "input_schema": {
+        "type": "object",
+        "required": ["date", "party_size"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "time_preference": { "type": "string", "enum": ["lunch", "dinner", "brunch"] },
+          "party_size": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "outdoor_preferred": { "type": "boolean" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "available_times": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "time": { "type": "string" },
+                "indoor": { "type": "boolean" },
+                "outdoor": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      },
+      "idempotent": true
+    },
+    {
+      "name": "make_reservation",
+      "description": "Book a table",
+      "input_schema": {
+        "type": "object",
+        "required": ["date", "time", "party_size", "name"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "time": { "type": "string", "format": "time" },
+          "party_size": { "type": "integer", "minimum": 1, "maximum": 20 },
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "email": { "type": "string" },
+          "special_requests": { "type": "string" },
+          "outdoor": { "type": "boolean", "default": false }
+        }
+      },
+      "destructive": false,
+      "requires_confirmation": true
+    }
+  ],
+  "authentication": {
+    "type": "none",
+    "docs_url": "https://developers.riversidebistro.com"
+  },
+  "policies": {
+    "rate_limit": "30/minute",
+    "data_handling": "no_training_on_interactions",
+    "business_policies": {
+      "cancellation": "Free cancellation up to 2 hours before reservation. No-shows may be charged $25/person.",
+      "large_parties": "Parties of 8+ require a deposit and fixed menu selection.",
+      "dietary": "We accommodate vegetarian, vegan, gluten-free, and most allergy requirements. Please note in reservation."
+    }
+  },
+  "brand_voice": {
+    "tone": "friendly, casual, passionate about food. We're neighborhood folks, not fine dining.",
+    "prohibited": ["chain restaurant comparisons", "health claims about menu items"],
+    "preferred_name": "Riverside"
+  },
+  "endpoints": {
+    "mcp": "https://mcp.riversidebistro.com/sse",
+    "rest": "https://api.riversidebistro.com/v1",
+    "docs": "https://developers.riversidebistro.com"
+  },
+  "humans": {
+    "triggers": ["party_over_12", "private_event", "complaint", "allergy_concern"],
+    "channels": [
+      { "type": "phone", "url": "tel:+15035551234", "hours": "Tue-Sun 10am-9pm PT" },
+      { "type": "email", "url": "mailto:hello@riversidebistro.com" }
+    ],
+    "handoff_protocol": "transfer_context"
+  },
+  "metadata": {
+    "industry": "food_service",
+    "regions": ["US"],
+    "languages": ["en"],
+    "updated": "2026-04-10T00:00:00Z"
+  }
+}

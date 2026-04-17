@@ -1,0 +1,82 @@
+{
+  "name": "CloudMetrics",
+  "version": "2.1.0",
+  "spec_version": "1.0",
+  "description": "Infrastructure monitoring and observability platform. Real-time metrics, alerting, and dashboards for cloud-native applications. Supports AWS, GCP, Azure, and Kubernetes.",
+  "capabilities": [
+    {
+      "name": "query_metrics",
+      "description": "Query time-series metrics with flexible filters, aggregations, and time ranges. Supports PromQL-compatible syntax.",
+      "type": "query",
+      "requires_auth": true,
+      "tags": ["metrics", "monitoring", "observability"]
+    },
+    {
+      "name": "list_alerts",
+      "description": "View active, resolved, and muted alerts across all monitored services.",
+      "type": "query",
+      "requires_auth": true,
+      "tags": ["alerts", "incidents"]
+    },
+    {
+      "name": "create_alert",
+      "description": "Create a new alert rule based on metric thresholds, anomaly detection, or composite conditions.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["alerts", "configuration"]
+    },
+    {
+      "name": "subscribe_alerts",
+      "description": "Subscribe to real-time alert notifications via webhook or SSE. Agent receives immediate notification when alerts fire.",
+      "type": "subscription",
+      "requires_auth": true,
+      "tags": ["alerts", "real-time"]
+    },
+    {
+      "name": "get_service_health",
+      "description": "Get current health status and SLA metrics for any monitored service.",
+      "type": "query",
+      "requires_auth": true,
+      "tags": ["health", "sla", "status"]
+    }
+  ],
+  "authentication": {
+    "type": "bearer",
+    "registration_url": "https://app.cloudmetrics.io/settings/api-keys",
+    "docs_url": "https://docs.cloudmetrics.io/auth"
+  },
+  "policies": {
+    "rate_limit": "1000/minute",
+    "data_handling": "no_storage",
+    "terms_url": "https://cloudmetrics.io/terms/api",
+    "business_policies": {
+      "data_retention": "Metrics retained for plan duration (30 days free, 13 months pro, unlimited enterprise).",
+      "sla": "99.99% API uptime for enterprise plans."
+    }
+  },
+  "brand_voice": {
+    "tone": "technical, precise, helpful. We're engineers talking to engineers.",
+    "preferred_name": "CloudMetrics"
+  },
+  "endpoints": {
+    "mcp": "https://mcp.cloudmetrics.io/sse",
+    "rest": "https://api.cloudmetrics.io/v2",
+    "graphql": "https://api.cloudmetrics.io/graphql",
+    "websocket": "wss://stream.cloudmetrics.io/v1",
+    "docs": "https://docs.cloudmetrics.io"
+  },
+  "humans": {
+    "triggers": ["billing_question", "data_loss_concern", "enterprise_inquiry"],
+    "channels": [
+      { "type": "chat", "url": "https://cloudmetrics.io/support", "hours": "24/7" },
+      { "type": "email", "url": "mailto:support@cloudmetrics.io" }
+    ],
+    "handoff_protocol": "transfer_context"
+  },
+  "metadata": {
+    "industry": "technology",
+    "regions": ["US", "EU", "AP"],
+    "languages": ["en"],
+    "updated": "2026-04-12T00:00:00Z"
+  }
+}

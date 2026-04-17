@@ -1,0 +1,40 @@
+{
+  "name": "agentweb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Make the web agent-ready. Open spec, tools, and infrastructure for the agent-driven web.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentweb/agentweb"
+  },
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "eslint packages/*/src/**/*.ts",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "eslint": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "mcp",
+    "agent-ready",
+    "web",
+    "spec",
+    "syndication",
+    "llm",
+    "model-context-protocol"
+  ]
+}

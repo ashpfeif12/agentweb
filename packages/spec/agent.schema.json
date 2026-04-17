@@ -1,0 +1,420 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://agentweb.dev/schemas/agent.json/v1.0.0",
+  "title": "agent.json",
+  "description": "Agent-Ready Syndication (ARS) manifest. Describes what a website or service offers to AI agents — capabilities, actions, policies, and endpoints.",
+  "type": "object",
+  "required": ["name", "spec_version", "description", "capabilities"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the service or brand",
+      "examples": ["Acme Fashion", "City Health Clinic", "TechDocs API"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Version of this agent.json file (semver). Increment when capabilities change.",
+      "examples": ["1.0.0", "2.1.3"]
+    },
+    "spec_version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Version of the agent.json specification this file conforms to"
+    },
+    "description": {
+      "type": "string",
+      "description": "Natural-language summary of what this service does. Write for an AI agent that needs to decide whether this service is relevant to a user's request.",
+      "maxLength": 500,
+      "examples": ["Premium fashion retailer with 2,000+ products across women's and men's collections"]
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "description": "What an agent can do with this service. Each capability is a discrete unit of functionality.",
+      "items": {
+        "$ref": "#/definitions/Capability"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "description": "Detailed action definitions with input/output schemas. More granular than capabilities — these are the specific operations agents can invoke.",
+      "items": {
+        "$ref": "#/definitions/Action"
+      }
+    },
+    "data_schemas": {
+      "type": "array",
+      "description": "Structured data types this service exposes. Helps agents understand the shape of data they'll receive.",
+      "items": {
+        "$ref": "#/definitions/DataSchema"
+      }
+    },
+    "authentication": {
+      "$ref": "#/definitions/Authentication",
+      "description": "How agents authenticate with this service"
+    },
+    "policies": {
+      "$ref": "#/definitions/Policies",
+      "description": "Rate limits, data handling rules, and business policies agents must respect"
+    },
+    "brand_voice": {
+      "$ref": "#/definitions/BrandVoice",
+      "description": "Guidelines for how agents should represent this brand in conversations"
+    },
+    "endpoints": {
+      "$ref": "#/definitions/Endpoints",
+      "description": "Protocol-specific endpoints agents can connect to"
+    },
+    "humans": {
+      "$ref": "#/definitions/HumanEscalation",
+      "description": "When and how to escalate from agent interaction to human support"
+    },
+    "nlweb": {
+      "$ref": "#/definitions/NLWebCompat",
+      "description": "NLWeb compatibility layer for services that also support the NLWeb protocol"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata (industry, region, languages, etc.)",
+      "properties": {
+        "industry": {
+          "type": "string",
+          "enum": ["retail", "hospitality", "healthcare", "finance", "media", "education", "real_estate", "food_service", "travel", "technology", "government", "other"]
+        },
+        "regions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ISO 3166-1 alpha-2 country codes where service operates",
+          "examples": [["US", "CA", "GB"]]
+        },
+        "languages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "BCP 47 language tags supported",
+          "examples": [["en", "fr", "es"]]
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this agent.json was last updated"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Capability": {
+      "type": "object",
+      "required": ["name", "description", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Machine-readable capability identifier (snake_case)",
+          "examples": ["search_products", "place_order", "check_availability"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Natural-language description of what this capability does. Be specific — agents use this to decide whether to invoke it.",
+          "maxLength": 300
+        },
+        "type": {
+          "type": "string",
+          "enum": ["query", "action", "subscription", "negotiation"],
+          "description": "query = read-only data retrieval. action = state-changing operation. subscription = real-time updates. negotiation = multi-turn agent-to-agent interaction."
+        },
+        "requires_auth": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this capability requires authentication"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Freeform tags for categorization and discovery"
+        }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Machine-readable action identifier, should match a capability name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "input_schema": {
+          "type": "object",
+          "description": "JSON Schema defining the expected input parameters"
+        },
+        "output_schema": {
+          "type": "object",
+          "description": "JSON Schema defining the response structure"
+        },
+        "idempotent": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether calling this action multiple times with the same input produces the same result"
+        },
+        "destructive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this action makes irreversible changes"
+        },
+        "requires_confirmation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the agent should confirm with the user before invoking"
+        },
+        "rate_limit": {
+          "type": "string",
+          "description": "Action-specific rate limit (overrides global policy)",
+          "examples": ["10/minute", "100/hour"]
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "input": { "type": "object" },
+              "output": { "type": "object" }
+            }
+          },
+          "description": "Example invocations with input and expected output"
+        }
+      }
+    },
+    "DataSchema": {
+      "type": "object",
+      "required": ["name", "schema"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Schema name (e.g., 'Product', 'Order', 'Appointment')"
+        },
+        "description": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "object",
+          "description": "JSON Schema definition for this data type"
+        },
+        "schema_org_type": {
+          "type": "string",
+          "description": "Corresponding Schema.org type if applicable",
+          "examples": ["Product", "Event", "LocalBusiness"]
+        }
+      }
+    },
+    "Authentication": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["none", "api_key", "oauth2", "bearer", "mcp_auth"],
+          "description": "Authentication mechanism"
+        },
+        "authorization_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "OAuth2 authorization endpoint"
+        },
+        "token_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "OAuth2 token endpoint"
+        },
+        "scopes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Available OAuth2 scopes"
+        },
+        "registration_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Where agents can register for API access"
+        },
+        "docs_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Authentication documentation"
+        }
+      }
+    },
+    "Policies": {
+      "type": "object",
+      "properties": {
+        "rate_limit": {
+          "type": "string",
+          "description": "Global rate limit for agent interactions",
+          "examples": ["100/minute", "1000/hour"]
+        },
+        "data_handling": {
+          "type": "string",
+          "enum": ["no_restrictions", "no_training_on_interactions", "no_storage", "ephemeral_only"],
+          "description": "How agent platforms should handle interaction data"
+        },
+        "terms_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to full terms of service for agent interactions"
+        },
+        "allowed_agents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Allowlist of agent platforms (empty = all allowed)",
+          "examples": [["claude", "gpt", "gemini"]]
+        },
+        "blocked_agents": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Blocklist of agent platforms"
+        },
+        "business_policies": {
+          "type": "object",
+          "description": "Domain-specific business rules agents must respect",
+          "properties": {
+            "returns": { "type": "string" },
+            "shipping": { "type": "string" },
+            "price_matching": { "type": "string" },
+            "warranty": { "type": "string" }
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "BrandVoice": {
+      "type": "object",
+      "description": "Guidelines for how agents represent this brand. This is a novel addition to web specs — it governs the agent's conversational behavior when discussing your brand.",
+      "properties": {
+        "tone": {
+          "type": "string",
+          "description": "Comma-separated tone descriptors",
+          "examples": ["warm, knowledgeable, never pushy", "professional, precise, luxury-focused"]
+        },
+        "prohibited": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Topics, claims, or associations the brand wants agents to avoid",
+          "examples": [["competitor comparisons", "unauthorized discounts", "political statements"]]
+        },
+        "required_disclosures": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Statements that must accompany certain interactions (legal, regulatory)",
+          "examples": [["FDA disclaimer for health products", "Investment risk disclosure"]]
+        },
+        "preferred_name": {
+          "type": "string",
+          "description": "How the brand should be referred to in conversation",
+          "examples": ["Acme", "Acme Fashion"]
+        },
+        "messaging_guidelines_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Link to full brand messaging guidelines"
+        }
+      }
+    },
+    "Endpoints": {
+      "type": "object",
+      "description": "Protocol-specific endpoints. Include at least one.",
+      "properties": {
+        "mcp": {
+          "type": "string",
+          "format": "uri",
+          "description": "MCP server endpoint (SSE or streamable HTTP)"
+        },
+        "rest": {
+          "type": "string",
+          "format": "uri",
+          "description": "REST API base URL"
+        },
+        "graphql": {
+          "type": "string",
+          "format": "uri",
+          "description": "GraphQL endpoint"
+        },
+        "nlweb": {
+          "type": "string",
+          "format": "uri",
+          "description": "NLWeb endpoint"
+        },
+        "a2a": {
+          "type": "string",
+          "format": "uri",
+          "description": "Google A2A protocol endpoint"
+        },
+        "websocket": {
+          "type": "string",
+          "format": "uri",
+          "description": "WebSocket endpoint for real-time agent communication"
+        },
+        "docs": {
+          "type": "string",
+          "format": "uri",
+          "description": "Developer documentation URL"
+        }
+      }
+    },
+    "HumanEscalation": {
+      "type": "object",
+      "description": "When and how agent interactions should escalate to humans",
+      "properties": {
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Conditions that should trigger human escalation",
+          "examples": [["order_value_over_500", "complaint", "legal_question", "custom_request"]]
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["chat", "email", "phone", "callback"] },
+              "url": { "type": "string", "format": "uri" },
+              "hours": { "type": "string" }
+            }
+          },
+          "description": "Available human support channels"
+        },
+        "handoff_protocol": {
+          "type": "string",
+          "enum": ["transfer_context", "restart", "email_summary"],
+          "description": "How context is transferred from agent to human"
+        }
+      }
+    },
+    "NLWebCompat": {
+      "type": "object",
+      "description": "NLWeb protocol compatibility settings (R.V. Guha's proposal)",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "schema_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Schema.org types this service exposes via NLWeb"
+        },
+        "ask_endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "NLWeb /ask endpoint for natural language queries"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@agentweb/spec",
+  "version": "1.0.0",
+  "description": "agent.json specification — JSON Schema, TypeScript types, and validation for Agent-Ready Syndication (ARS) manifests.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "agent.schema.json",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "validate": "node dist/cli.js"
+  },
+  "keywords": [
+    "agent.json",
+    "agent-ready",
+    "ars",
+    "spec",
+    "schema",
+    "validation",
+    "mcp",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agentweb/agentweb",
+    "directory": "packages/spec"
+  }
+}

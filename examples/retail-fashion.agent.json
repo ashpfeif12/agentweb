@@ -1,0 +1,262 @@
+{
+  "name": "Acme Fashion",
+  "version": "1.0.0",
+  "spec_version": "1.0",
+  "description": "Premium fashion retailer with 2,000+ products across women's and men's collections. Known for sustainable materials and modern silhouettes.",
+  "capabilities": [
+    {
+      "name": "search_products",
+      "description": "Find products by category, color, size, price range, occasion, or style. Supports natural language queries like 'summer wedding dress under $300'.",
+      "type": "query",
+      "tags": ["catalog", "search", "browse"]
+    },
+    {
+      "name": "check_inventory",
+      "description": "Check real-time availability for a specific product, size, and color combination. Returns stock count and restock estimates.",
+      "type": "query",
+      "requires_auth": false,
+      "tags": ["inventory", "availability"]
+    },
+    {
+      "name": "place_order",
+      "description": "Add items to cart, apply promotions, calculate shipping, and complete purchase. Supports guest checkout and registered accounts.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["commerce", "checkout", "purchase"]
+    },
+    {
+      "name": "track_order",
+      "description": "Get real-time shipping status, estimated delivery date, and carrier tracking link for an existing order.",
+      "type": "query",
+      "requires_auth": true,
+      "tags": ["shipping", "tracking"]
+    },
+    {
+      "name": "process_return",
+      "description": "Initiate a return or exchange for items purchased within the return window. Generates prepaid shipping label.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["returns", "exchange"]
+    },
+    {
+      "name": "style_recommendations",
+      "description": "Get personalized outfit recommendations based on occasion, body type, color preferences, and budget. Powered by styling AI.",
+      "type": "query",
+      "tags": ["recommendations", "styling", "personalization"]
+    }
+  ],
+  "actions": [
+    {
+      "name": "search_products",
+      "description": "Search the product catalog with flexible filters",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Natural language search query"
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": ["women", "men", "accessories", "shoes"]
+              },
+              "subcategory": { "type": "string" },
+              "size": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "color": { "type": "string" },
+              "price_range": {
+                "type": "object",
+                "properties": {
+                  "min": { "type": "number" },
+                  "max": { "type": "number" },
+                  "currency": { "type": "string", "default": "USD" }
+                }
+              },
+              "occasion": { "type": "string" },
+              "material": { "type": "string" },
+              "sustainable_only": { "type": "boolean", "default": false }
+            }
+          },
+          "sort_by": {
+            "type": "string",
+            "enum": ["relevance", "price_low", "price_high", "newest", "rating"],
+            "default": "relevance"
+          },
+          "limit": { "type": "integer", "default": 10, "maximum": 50 }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "price": { "type": "number" },
+                "currency": { "type": "string" },
+                "sizes_available": { "type": "array", "items": { "type": "string" } },
+                "colors": { "type": "array", "items": { "type": "string" } },
+                "image_url": { "type": "string" },
+                "product_url": { "type": "string" },
+                "rating": { "type": "number" },
+                "sustainable": { "type": "boolean" }
+              }
+            }
+          },
+          "total_results": { "type": "integer" },
+          "has_more": { "type": "boolean" }
+        }
+      },
+      "idempotent": true,
+      "destructive": false,
+      "examples": [
+        {
+          "description": "Find summer dresses under $200",
+          "input": {
+            "query": "summer dress",
+            "filters": {
+              "category": "women",
+              "price_range": { "max": 200 },
+              "occasion": "summer"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "place_order",
+      "description": "Complete a purchase",
+      "input_schema": {
+        "type": "object",
+        "required": ["items", "shipping_address"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["product_id", "size", "quantity"],
+              "properties": {
+                "product_id": { "type": "string" },
+                "size": { "type": "string" },
+                "color": { "type": "string" },
+                "quantity": { "type": "integer", "minimum": 1 }
+              }
+            }
+          },
+          "shipping_address": { "type": "object" },
+          "promo_code": { "type": "string" },
+          "gift_wrap": { "type": "boolean", "default": false }
+        }
+      },
+      "destructive": true,
+      "requires_confirmation": true,
+      "rate_limit": "10/minute"
+    }
+  ],
+  "data_schemas": [
+    {
+      "name": "Product",
+      "description": "A product in the Acme Fashion catalog",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string" },
+          "price": { "type": "number" },
+          "sizes": { "type": "array", "items": { "type": "string" } },
+          "colors": { "type": "array", "items": { "type": "string" } },
+          "material": { "type": "string" },
+          "sustainable": { "type": "boolean" },
+          "rating": { "type": "number" },
+          "reviews_count": { "type": "integer" }
+        }
+      },
+      "schema_org_type": "Product"
+    }
+  ],
+  "authentication": {
+    "type": "oauth2",
+    "authorization_url": "https://acmefashion.com/oauth/authorize",
+    "token_url": "https://acmefashion.com/oauth/token",
+    "scopes": ["read_catalog", "place_orders", "manage_account"],
+    "registration_url": "https://developers.acmefashion.com/register",
+    "docs_url": "https://developers.acmefashion.com/auth"
+  },
+  "policies": {
+    "rate_limit": "100/minute",
+    "data_handling": "no_training_on_interactions",
+    "terms_url": "https://acmefashion.com/agent-terms",
+    "business_policies": {
+      "returns": "30-day no-questions-asked returns. Free return shipping on all orders.",
+      "shipping": "Free standard shipping on orders over $75. Express available ($12.99). International shipping to 40+ countries.",
+      "price_matching": "We match prices from authorized retailers within 14 days of purchase.",
+      "warranty": "All items guaranteed against manufacturing defects for 1 year."
+    }
+  },
+  "brand_voice": {
+    "tone": "warm, knowledgeable, confident but never pushy. Think trusted friend who happens to have great taste.",
+    "prohibited": [
+      "competitor disparagement",
+      "unauthorized discount promises",
+      "political or religious statements",
+      "body-shaming language",
+      "false scarcity claims"
+    ],
+    "required_disclosures": [
+      "Material composition must be stated for clothing items",
+      "Final sale items must be clearly identified"
+    ],
+    "preferred_name": "Acme Fashion",
+    "messaging_guidelines_url": "https://brand.acmefashion.com/guidelines"
+  },
+  "endpoints": {
+    "mcp": "https://mcp.acmefashion.com/sse",
+    "rest": "https://api.acmefashion.com/v2",
+    "docs": "https://developers.acmefashion.com"
+  },
+  "humans": {
+    "triggers": [
+      "order_value_over_500",
+      "complaint_or_dissatisfaction",
+      "legal_or_regulatory_question",
+      "custom_tailoring_request",
+      "corporate_or_bulk_order",
+      "accessibility_needs"
+    ],
+    "channels": [
+      {
+        "type": "chat",
+        "url": "https://acmefashion.com/support/chat",
+        "hours": "Mon-Sat 8am-10pm EST"
+      },
+      {
+        "type": "email",
+        "url": "mailto:support@acmefashion.com",
+        "hours": "24/7 (response within 4 hours)"
+      },
+      {
+        "type": "phone",
+        "url": "tel:+18005551234",
+        "hours": "Mon-Fri 9am-6pm EST"
+      }
+    ],
+    "handoff_protocol": "transfer_context"
+  },
+  "metadata": {
+    "industry": "retail",
+    "regions": ["US", "CA", "GB", "AU"],
+    "languages": ["en"],
+    "updated": "2026-04-15T00:00:00Z"
+  }
+}

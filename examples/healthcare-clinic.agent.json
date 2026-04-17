@@ -1,0 +1,98 @@
+{
+  "name": "CityHealth Clinic",
+  "version": "1.0.0",
+  "spec_version": "1.0",
+  "description": "Multi-specialty medical clinic offering primary care, pediatrics, dermatology, and mental health services. Online scheduling, telehealth, and in-person visits available.",
+  "capabilities": [
+    {
+      "name": "find_provider",
+      "description": "Search for healthcare providers by specialty, insurance accepted, language spoken, gender preference, and availability window.",
+      "type": "query",
+      "tags": ["providers", "search", "doctors"]
+    },
+    {
+      "name": "check_availability",
+      "description": "Check appointment availability for a specific provider, visit type, and date range.",
+      "type": "query",
+      "tags": ["scheduling", "availability"]
+    },
+    {
+      "name": "book_appointment",
+      "description": "Schedule an appointment with a provider. Supports in-person and telehealth visits. Requires patient verification.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["scheduling", "booking"]
+    },
+    {
+      "name": "request_prescription_refill",
+      "description": "Request a refill for an existing prescription. Requires patient verification and active prescription ID.",
+      "type": "action",
+      "requires_auth": true,
+      "tags": ["prescriptions", "pharmacy"]
+    },
+    {
+      "name": "verify_insurance",
+      "description": "Check if a specific insurance plan is accepted and verify coverage for a visit type.",
+      "type": "query",
+      "tags": ["insurance", "coverage"]
+    }
+  ],
+  "authentication": {
+    "type": "oauth2",
+    "authorization_url": "https://auth.cityhealth.com/authorize",
+    "token_url": "https://auth.cityhealth.com/token",
+    "scopes": ["read_providers", "book_appointments", "manage_prescriptions"],
+    "docs_url": "https://developers.cityhealth.com/auth"
+  },
+  "policies": {
+    "rate_limit": "60/minute",
+    "data_handling": "no_storage",
+    "terms_url": "https://cityhealth.com/agent-terms",
+    "business_policies": {
+      "cancellation": "Free cancellation 24 hours before appointment. Late cancellations may incur $50 fee.",
+      "telehealth": "Telehealth available for follow-up visits and select new patient consultations. State licensure restrictions apply.",
+      "hipaa": "All agent interactions must comply with HIPAA. No PHI should be stored or logged by agent platforms."
+    }
+  },
+  "brand_voice": {
+    "tone": "caring, professional, clear. Prioritize patient safety and accuracy above all.",
+    "prohibited": [
+      "medical diagnoses or treatment recommendations",
+      "guarantees about treatment outcomes",
+      "sharing patient information in responses",
+      "recommending against seeking emergency care"
+    ],
+    "required_disclosures": [
+      "If symptoms suggest emergency, always direct to 911 or nearest ER",
+      "Agent interactions do not constitute medical advice"
+    ],
+    "preferred_name": "CityHealth"
+  },
+  "endpoints": {
+    "mcp": "https://mcp.cityhealth.com/sse",
+    "rest": "https://api.cityhealth.com/v1",
+    "docs": "https://developers.cityhealth.com"
+  },
+  "humans": {
+    "triggers": [
+      "medical_emergency_suspected",
+      "patient_distress",
+      "insurance_dispute",
+      "complaint",
+      "medication_interaction_concern",
+      "mental_health_crisis"
+    ],
+    "channels": [
+      { "type": "phone", "url": "tel:+18005559111", "hours": "24/7 nurse line" },
+      { "type": "chat", "url": "https://cityhealth.com/support", "hours": "Mon-Fri 8am-6pm" },
+      { "type": "email", "url": "mailto:care@cityhealth.com" }
+    ],
+    "handoff_protocol": "transfer_context"
+  },
+  "metadata": {
+    "industry": "healthcare",
+    "regions": ["US"],
+    "languages": ["en", "es"],
+    "updated": "2026-04-14T00:00:00Z"
+  }
+}
