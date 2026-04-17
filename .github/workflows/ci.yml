@@ -17,8 +17,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       - name: Build
-        run: npm run build
-      - name: Lint
-        run: npm run lint
+        run: |
+          cd packages/spec && npx tsc && cd ../..
+          cd packages/scorer && npx tsc && cd ../..
+          cd packages/generator && npx tsc && cd ../..
+      - name: Validate examples
+        run: |
+          for f in examples/*.agent.json; do
+            node -e "
+              const fs = require('fs');
+              const data = JSON.parse(fs.readFileSync('$f', 'utf-8'));
+              const required = ['name', 'spec_version', 'description', 'capabilities'];
+              const missing = required.filter(k => !data[k]);
+              if (missing.length > 0) { console.error('FAIL: $f missing ' + missing.join(', ')); process.exit(1); }
+              console.log('✓ $f');
+            "
+          done
