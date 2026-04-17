@@ -15,9 +15,6 @@
     "build": "tsc",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@agentweb/spec": "workspace:*"
-  },
   "keywords": [
     "agent-readiness",
     "scorer",
@@ -29,7 +26,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agentweb/agentweb",
+    "url": "https://github.com/ashpfeif12/agentweb",
     "directory": "packages/scorer"
   }
 }
