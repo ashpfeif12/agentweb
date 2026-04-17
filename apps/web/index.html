@@ -1,199 +1,138 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AgentWeb — Make the web agent-ready</title>
-<meta name="description" content="Open spec, scorer, and MCP generator for the agent-driven web.">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',system-ui,sans-serif;color:#1a1a2e;background:#fafbfc;-webkit-font-smoothing:antialiased}
-a{color:#0f766e;text-decoration:none}
-code,pre{font-family:'DM Mono',monospace}
-nav{position:sticky;top:0;z-index:50;background:rgba(250,251,252,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #e2e8f020;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
-.nav-icon{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#0f766e,#14b8a6);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700}
-.nav-links{display:flex;gap:20px;font-size:12px;font-weight:500}
-.nav-links a{color:#64748b}
-.nav-links a.primary{color:#0f766e;font-weight:600}
-section{padding:64px 20px}
-.container{max-width:760px;margin:0 auto}
-.dark{background:#0a0f1a;color:#e2e8f0}
-.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
-.badge-green{color:#0f766e;border:1px solid #0f766e30;background:#0f766e08}
-.badge-purple{color:#6366f1;border:1px solid #6366f130;background:#6366f108}
-.badge-amber{color:#f59e0b;border:1px solid #f59e0b30;background:#f59e0b08}
-.badge-teal{color:#14b8a6;border:1px solid #14b8a630;background:#14b8a608}
-.badge-gray{color:#94a3b8;border:1px solid #94a3b830;background:#94a3b808}
-h1{font-size:36px;font-weight:700;line-height:1.15;color:#0a0f1a;margin:16px 0 8px}
-h2{font-size:26px;font-weight:700;margin:12px 0 6px}
-.subtitle{font-size:16px;color:#64748b;line-height:1.6;max-width:520px}
-.code-block{background:#0f172a;color:#e2e8f0;padding:16px 18px;border-radius:10px;font-size:12px;line-height:1.6;overflow-x:auto;border:1px solid #1e293b;margin-bottom:16px}
-.code-block .label{font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center}
-.stat-num{font-size:32px;font-weight:700;color:#f59e0b}
-.stat-label{font-size:12px;color:#94a3b8;margin-top:4px}
-.field-row{display:flex;align-items:baseline;gap:6px;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f5f9}
-.field-name{font-family:'DM Mono',monospace;color:#0f766e;font-weight:500;min-width:110px}
-.field-req{font-size:8px;color:#ef4444;font-weight:700}
-.field-desc{color:#64748b}
-.scorer-box{border:1px solid #e2e8f0;border-radius:14px;padding:20px;background:white}
-.scorer-input{display:flex;gap:8px}
-.scorer-input input{flex:1;padding:10px 14px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:8px;outline:none;font-family:inherit}
-.scorer-input input:focus{border-color:#0f766e}
-.scorer-input button{padding:10px 18px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:#0f766e;color:white;cursor:pointer;font-family:inherit;white-space:nowrap}
-.scorer-input button:disabled{background:#94a3b8;cursor:wait}
-.industry-btn{padding:6px 14px;font-size:12px;font-weight:500;border:1px solid #334155;border-radius:6px;cursor:pointer;font-family:inherit;background:transparent;color:#94a3b8}
-.industry-btn.active{border-color:#14b8a6;background:#14b8a620;color:#14b8a6}
-.layer-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:8px;margin-bottom:6px}
-.layer-name{font-size:14px;font-weight:600}
-.layer-desc{font-size:11px;color:#94a3b8}
-.layer-type{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
-.input-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-.input-card{padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px}
-.input-card-title{font-weight:600;color:#334155}
-.input-card-status{font-size:10px;font-weight:500;text-transform:uppercase}
-.btn-primary{padding:10px 20px;font-size:13px;font-weight:600;border-radius:8px;background:#0f766e;color:white;display:inline-block}
-.btn-secondary{padding:10px 20px;font-size:13px;font-weight:600;border-radius:8px;background:white;color:#0f766e;border:1.5px solid #0f766e;display:inline-block}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.spinner{width:32px;height:32px;border:3px solid #e5e5e5;border-top-color:#0f766e;border-radius:50%;margin:0 auto 12px;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-footer{text-align:center;padding:20px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0}
-@media(max-width:640px){.two-col,.stats-grid,.input-grid{grid-template-columns:1fr}h1{font-size:28px}}
-</style>
-</head>
-<body>
-<nav>
-<div style="display:flex;align-items:center;gap:8px"><div class="nav-icon">A</div><span style="font-size:14px;font-weight:700;color:#0f766e">AgentWeb</span></div>
-<div class="nav-links"><a href="#spec">Spec</a><a href="#scorer">Score</a><a href="#generate">Generate</a><a href="https://github.com/ashpfeif12/agentweb" target="_blank" class="primary">GitHub</a></div>
-</nav>
 
-<section id="hero"><div class="container" style="text-align:center;padding:40px 0 20px">
-<span class="badge badge-green">Open source</span>
-<h1>Make the web agent-ready.</h1>
-<p class="subtitle" style="margin:0 auto 24px">The web was built for browsers. AI agents are the next consumer. AgentWeb gives them a spec, a scorer, and a generator.</p>
-<div class="code-block" style="max-width:480px;margin:0 auto;text-align:left"><code>npx agentweb init --industry retail</code></div>
-</div></section>
+AgentWeb
+Spec
+Score
+Generate
+GitHub
 
-<section class="dark"><div class="container">
-<div class="stats-grid">
-<div><div class="stat-num">0/10</div><div class="stat-label">top sites have agent.json</div></div>
-<div><div class="stat-num">0/10</div><div class="stat-label">expose MCP endpoints</div></div>
-<div><div class="stat-num">40</div><div class="stat-label">avg readiness score / 100</div></div>
-</div>
-<p style="text-align:center;font-size:14px;color:#94a3b8;margin-top:12px">We scored the top 10 websites. Every single one failed.</p>
-</div></section>
 
-<section id="spec"><div class="container">
-<span class="badge badge-green">The spec</span>
-<h2>agent.json</h2>
-<p style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:20px">A single file at your domain root that tells AI agents what you do. Like robots.txt for agents. Four required fields.</p>
-<div class="two-col"><div>
-<div style="font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Fields</div>
-<div class="field-row"><span class="field-name">name</span><span class="field-req">REQ</span><span class="field-desc">Your brand name</span></div>
-<div class="field-row"><span class="field-name">spec_version</span><span class="field-req">REQ</span><span class="field-desc">Always "1.0"</span></div>
-<div class="field-row"><span class="field-name">description</span><span class="field-req">REQ</span><span class="field-desc">What you do</span></div>
-<div class="field-row"><span class="field-name">capabilities</span><span class="field-req">REQ</span><span class="field-desc">What agents can do</span></div>
-<div class="field-row"><span class="field-name">actions</span><span class="field-desc">I/O schemas for each action</span></div>
-<div class="field-row"><span class="field-name">authentication</span><span class="field-desc">OAuth2, API key, bearer</span></div>
-<div class="field-row"><span class="field-name">policies</span><span class="field-desc">Rate limits, data handling</span></div>
-<div class="field-row"><span class="field-name">brand_voice</span><span class="field-desc">Tone, prohibited topics</span></div>
-<div class="field-row"><span class="field-name">endpoints</span><span class="field-desc">MCP, REST, GraphQL URLs</span></div>
-<div class="field-row"><span class="field-name">humans</span><span class="field-desc">Escalation paths</span></div>
-</div>
-<div class="code-block" style="margin:0"><div class="label">Example</div><pre>{
+
+OPEN SOURCE PROTOCOL
+Make the web agent-ready.
+AI agents can't discover what your site does. agent.json fixes that — one file that declares your capabilities, policies, and endpoints.
+$ npx agentweb init --industry retail
+> Created agent.json with 5 capabilities
+0 / 10
+top sites have agent.json
+0 / 10
+expose MCP endpoints
+40
+avg readiness score / 100
+TRY IT NOW
+Score any site
+Four dimensions. 25 points each. Discovery, structure, actions, policies.
+
+Score it
+
+stripe.com
+shopify.com
+amazon.com
+nike.com
+THE SPEC
+agent.json
+One file at your domain root. Tells agents what you do, what actions are available, how to authenticate, and what rules to follow.
+FIELDS
+name
+REQ
+Brand name
+spec_version
+REQ
+"1.0"
+description
+REQ
+For agents
+capabilities
+REQ
+What agents can do
+actions
+I/O schemas
+authentication
+OAuth2, API key
+policies
+Rate limits, rules
+brand_voice
+Tone, prohibited
+endpoints
+MCP, REST, GQL
+humans
+Escalation
+{
   "name": "Acme Fashion",
   "spec_version": "1.0",
-  "description": "Premium retailer, 2k+ products",
+  "description": "Premium retailer",
   "capabilities": [
-    { "name": "search_products",
-      "type": "query" },
-    { "name": "place_order",
-      "type": "action" }
+    {
+      "name": "search_products",
+      "type": "query"
+    },
+    {
+      "name": "place_order",
+      "type": "action"
+    }
   ],
   "brand_voice": {
     "tone": "warm, never pushy"
   },
   "endpoints": {
-    "mcp": "https://mcp.acme.com/sse"
+    "mcp": "mcp.acme.com/sse"
   }
-}</pre></div></div>
-</div></section>
+}
+QUICK START
+Generate your agent.json
+Pick your industry. Get capabilities, brand voice, and policies pre-filled.
+Retail
+Restaurant
+Hospitality
+Healthcare
+SaaS / API
+Media
+$ npx agentweb init --industry retail --output agent.json
+> Created agent.json with 5 capabilities
+POWER TOOL
+Generate MCP servers
+Point at your OpenAPI spec. Get a complete, deployable MCP server.
+$ npx agentweb generate --from openapi.yaml
 
-<section id="scorer" style="background:#f8fafc"><div class="container">
-<span class="badge badge-purple">Try it</span>
-<h2>Score any site</h2>
-<p style="font-size:14px;color:#64748b;margin-bottom:16px">Discovery, structure, actions, policies — 25 points each.</p>
-<div class="scorer-box">
-<div class="scorer-input"><input id="score-url" placeholder="stripe.com" onkeydown="if(event.key==='Enter')doScore()"><button id="score-btn" onclick="doScore()">Score</button></div>
-<div id="score-result"></div>
-</div>
-<div style="display:flex;gap:6px;margin-top:12px;justify-content:center">
-<button onclick="tryUrl('stripe.com')" style="padding:4px 10px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;background:white;cursor:pointer;color:#64748b;font-family:inherit">stripe.com</button>
-<button onclick="tryUrl('shopify.com')" style="padding:4px 10px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;background:white;cursor:pointer;color:#64748b;font-family:inherit">shopify.com</button>
-<button onclick="tryUrl('amazon.com')" style="padding:4px 10px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;background:white;cursor:pointer;color:#64748b;font-family:inherit">amazon.com</button>
-</div>
-</div></section>
+  [1/5] Parsing input...        5 tools found
+  [2/5] Generating code...      Done
+  [3/5] Generating agent.json   Done
+  [4/5] Package files...        Done
+  [5/5] Writing output...       Done
 
-<section class="dark" id="init"><div class="container">
-<span class="badge badge-teal">Quick start</span>
-<h2 style="color:#e2e8f0">Generate your agent.json</h2>
-<p style="font-size:14px;color:#94a3b8;margin-bottom:20px">Pick your industry. Get capabilities, brand voice, and policies pre-filled.</p>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
-<button class="industry-btn active" onclick="pickIndustry('retail',this)">Retail</button>
-<button class="industry-btn" onclick="pickIndustry('food_service',this)">Restaurant</button>
-<button class="industry-btn" onclick="pickIndustry('hospitality',this)">Hospitality</button>
-<button class="industry-btn" onclick="pickIndustry('healthcare',this)">Healthcare</button>
-<button class="industry-btn" onclick="pickIndustry('technology',this)">SaaS</button>
-<button class="industry-btn" onclick="pickIndustry('media',this)">Media</button>
-</div>
-<div class="code-block"><code id="init-cmd">npx agentweb init --industry retail --output agent.json</code></div>
-</div></section>
+  Output: ./mcp-server/
+    src/server.ts    MCP server with typed tools
+    src/auth.ts      Authentication handling
+    agent.json       Auto-generated manifest
+    Dockerfile       Ready to deploy
+OpenAPI 3.x
+STABLE
+GraphQL
+BETA
+Website
+EXPERIMENTAL
+THE PLATFORM
+Five layers, one stack
+Open source bottom creates adoption. Commercial top solves enterprise problems.
+Agent SEO
+Discovery analytics
+COMING SOON
+Agent Commerce
+Catalogs for negotiation
+COMING SOON
+Agent Middleware
+Proxy making sites agent-ready
+COMING SOON
+MCP Generator
+API to MCP server
+OPEN SOURCE
+agent.json
+Spec + validator + scorer
+OPEN SOURCE
 
-<section id="generate"><div class="container">
-<span class="badge badge-amber">Power tool</span>
-<h2>Generate MCP servers</h2>
-<p style="font-size:14px;color:#64748b;margin-bottom:16px">Point at your OpenAPI spec. Get a deployable MCP server.</p>
-<div class="code-block"><div class="label">One command</div><pre>npx agentweb generate --from openapi.yaml
+The spec is the wedge.
+Star the repo. Score your site. Ship your agent.json.
+Star on GitHub
+Score your site
 
-# Output:
-#   src/server.ts    — MCP server with all tools
-#   src/auth.ts      — Authentication handling
-#   agent.json       — Auto-generated manifest
-#   Dockerfile       — Ready to deploy</pre></div>
-<div class="input-grid">
-<div class="input-card"><div class="input-card-title">OpenAPI 3.x</div><div class="input-card-status" style="color:#22c55e">Stable</div></div>
-<div class="input-card"><div class="input-card-title">GraphQL</div><div class="input-card-status" style="color:#f59e0b">Beta</div></div>
-<div class="input-card"><div class="input-card-title">Website scrape</div><div class="input-card-status" style="color:#f59e0b">Experimental</div></div>
-</div>
-</div></section>
-
-<section class="dark" id="stack"><div class="container">
-<span class="badge badge-gray">The platform</span>
-<h2 style="color:#e2e8f0">Five layers, one stack</h2>
-<p style="font-size:14px;color:#94a3b8;margin-bottom:20px">Open source bottom feeds commercial top.</p>
-<div class="layer-row" style="border:1px solid #f59e0b30;background:#f59e0b08"><div><div class="layer-name" style="color:#f59e0b">Agent SEO</div><div class="layer-desc">Discovery analytics</div></div><span class="layer-type" style="color:#64748b">Coming soon</span></div>
-<div class="layer-row" style="border:1px solid #f9731630;background:#f9731608"><div><div class="layer-name" style="color:#f97316">Agent Commerce</div><div class="layer-desc">Catalogs for agent negotiation</div></div><span class="layer-type" style="color:#64748b">Coming soon</span></div>
-<div class="layer-row" style="border:1px solid #3b82f630;background:#3b82f608"><div><div class="layer-name" style="color:#3b82f6">Agent Middleware</div><div class="layer-desc">Proxy making sites agent-ready</div></div><span class="layer-type" style="color:#64748b">Coming soon</span></div>
-<div class="layer-row" style="border:1px solid #8b5cf630;background:#8b5cf608"><div><div class="layer-name" style="color:#8b5cf6">MCP Generator</div><div class="layer-desc">API to MCP server</div></div><span class="layer-type" style="color:#22c55e">Open source</span></div>
-<div class="layer-row" style="border:1px solid #14b8a630;background:#14b8a608"><div><div class="layer-name" style="color:#14b8a6">agent.json</div><div class="layer-desc">Spec + validator + scorer</div></div><span class="layer-type" style="color:#22c55e">Open source</span></div>
-</div></section>
-
-<section id="cta"><div class="container" style="text-align:center;padding:20px 0">
-<h2>The spec is the wedge.</h2>
-<p style="font-size:14px;color:#64748b;margin-bottom:20px">Star the repo. Score your site. Ship your agent.json.</p>
-<div style="display:flex;gap:10px;justify-content:center">
-<a href="https://github.com/ashpfeif12/agentweb" target="_blank" class="btn-primary">Star on GitHub</a>
-<a href="#scorer" class="btn-secondary">Score your site</a>
-</div>
-</div></section>
-
-<footer>AgentWeb — MIT License — Built by <a href="https://github.com/ashpfeif12" target="_blank">Ashley</a></footer>
-
-<script>
-function tryUrl(u){document.getElementById('score-url').value=u;doScore()}
-function pickIndustry(id,el){document.querySelectorAll('.industry-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');document.getElementById('init-cmd').textContent='npx agentweb init --industry '+id+' --output agent.json'}
-async function doScore(){var input=document.getElementById('score-url'),btn=document.getElementById('score-btn'),out=document.getElementById('score-result'),url=input.value.trim();if(!url)return;if(!url.startsWith('http'))url='https://'+url;btn.disabled=true;btn.textContent='...';out.innerHTML='<div style="text-align:center;padding:20px"><div class="spinner"></div><p style="font-size:13px;color:#888">Analyzing...</p></div>';try{var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,tools:[{type:'web_search_20250305',name:'web_search'}],messages:[{role:'user',content:'Score '+url+' for AI agent readiness. Check robots.txt, sitemap, Schema.org, meta desc, semantic HTML, HTTPS, public API, llms.txt, terms/privacy. No site has agent.json or MCP. Respond ONLY JSON:\n{"score":42,"summary":"one line","has":["robots.txt"],"missing":["agent.json"]}'}]})});var data=await res.json(),text=data.content?.filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('')||'',p=JSON.parse(text.replace(/```json|```/g,'').trim()),c=p.score>=70?'#22c55e':p.score>=40?'#f59e0b':'#ef4444';out.innerHTML='<div style="display:flex;gap:16px;align-items:flex-start;margin-top:16px"><div style="text-align:center;min-width:70px"><div style="font-size:36px;font-weight:700;color:'+c+';line-height:1">'+p.score+'</div><div style="font-size:10px;color:#94a3b8">/ 100</div></div><div style="flex:1;font-size:12px;line-height:1.6;color:#475569"><div style="margin-bottom:6px">'+p.summary+'</div>'+(p.has?.length?'<div style="color:#22c55e">Has: '+p.has.join(', ')+'</div>':'')+(p.missing?.length?'<div style="color:#ef4444;margin-top:2px">Missing: '+p.missing.join(', ')+'</div>':'')+'<div style="margin-top:10px;padding:8px 12px;background:#0f172a;border-radius:6px;font-size:11px"><code style="color:#5eead4">npx agentweb init '+url+' --output agent.json</code></div></div></div>'}catch(e){out.innerHTML='<p style="color:#ef4444;font-size:13px;padding:12px;margin-top:12px">Failed. '+e+'</p>'}btn.disabled=false;btn.textContent='Score'}
-</script>
-</body>
-</html>
+AgentWeb
+MIT License — @ashpfeif12
