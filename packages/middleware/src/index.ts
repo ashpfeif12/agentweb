@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * AgentWeb Middleware — MCP Server
  *
@@ -15,8 +16,9 @@
  * No changes needed on the origin site.
  *
  * Usage:
+ *   npx agentweb-middleware --origin https://example.com
+ *   npx agentweb-middleware --origin https://example.com --agent-json ./agent.json
  *   ORIGIN_URL=https://example.com npx agentweb-middleware
- *   ORIGIN_URL=https://example.com AGENT_JSON=./agent.json npx agentweb-middleware
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -34,28 +36,65 @@ import {
 } from "./services/proxy.js";
 import { Analytics } from "./services/analytics.js";
 
+// ─── CLI Argument Parsing ────────────────────────────────────
+
+const argv = process.argv.slice(2);
+
+if (argv.includes("--help") || argv.includes("-h")) {
+  console.log(`
+  AgentWeb Middleware — MCP proxy for any website
+
+  Usage:
+    npx agentweb-middleware --origin <url> [options]
+
+  Options:
+    --origin <url>       Origin site URL to proxy (required)
+    --port <n>           Port to listen on (default: 3000)
+    --agent-json <file>  Path to agent.json file for brand voice + policies
+    --cache-ttl <n>      Content cache TTL in seconds (default: 300)
+    --rate-limit <n>     Requests per minute (default: 100)
+    --help, -h           Show this help
+
+  Environment variables (used when a flag is not provided):
+    ORIGIN_URL (or ORIGIN), PORT, AGENT_JSON, CACHE_TTL, RATE_LIMIT
+
+  Examples:
+    npx agentweb-middleware --origin https://nike.com
+    npx agentweb-middleware --origin https://acme.com --agent-json ./agent.json
+    ORIGIN_URL=https://nike.com npx agentweb-middleware
+`);
+  process.exit(0);
+}
+
+function getArg(flag: string): string | undefined {
+  const idx = argv.indexOf(flag);
+  return idx !== -1 && idx + 1 < argv.length ? argv[idx + 1] : undefined;
+}
+
 // ─── Configuration ───────────────────────────────────────────
 
-const ORIGIN = process.env.ORIGIN_URL || process.env.ORIGIN || "";
-const PORT = parseInt(process.env.PORT || "3000");
-const CACHE_TTL = parseInt(process.env.CACHE_TTL || "300");
-const RATE_LIMIT = parseInt(process.env.RATE_LIMIT || "100");
+const ORIGIN = getArg("--origin") || process.env.ORIGIN_URL || process.env.ORIGIN || "";
+const PORT = parseInt(getArg("--port") || process.env.PORT || "3000");
+const CACHE_TTL = parseInt(getArg("--cache-ttl") || process.env.CACHE_TTL || "300");
+const RATE_LIMIT = parseInt(getArg("--rate-limit") || process.env.RATE_LIMIT || "100");
+const AGENT_JSON_PATH = getArg("--agent-json") || process.env.AGENT_JSON;
 
 if (!ORIGIN) {
-  console.error("Error: ORIGIN_URL environment variable is required.");
-  console.error("Usage: ORIGIN_URL=https://example.com npx agentweb-middleware");
+  console.error("Error: --origin (or ORIGIN_URL env var) is required.");
+  console.error("Usage: npx agentweb-middleware --origin https://example.com");
+  console.error("Run with --help for more options.");
   process.exit(1);
 }
 
 // Load agent.json if provided
 let agentJson: Record<string, unknown> | undefined;
-if (process.env.AGENT_JSON) {
+if (AGENT_JSON_PATH) {
   try {
     const fs = await import("fs");
-    agentJson = JSON.parse(fs.readFileSync(process.env.AGENT_JSON, "utf-8"));
-    console.error(`Loaded agent.json from ${process.env.AGENT_JSON}`);
+    agentJson = JSON.parse(fs.readFileSync(AGENT_JSON_PATH, "utf-8"));
+    console.error(`Loaded agent.json from ${AGENT_JSON_PATH}`);
   } catch (e) {
-    console.error(`Warning: Could not load agent.json from ${process.env.AGENT_JSON}: ${e}`);
+    console.error(`Warning: Could not load agent.json from ${AGENT_JSON_PATH}: ${e}`);
   }
 }
 

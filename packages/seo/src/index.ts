@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * AgentWeb SEO — MCP Server
  *
@@ -5,7 +6,16 @@
  * rank, and recommend your brand, and provides optimization guidance.
  *
  * Usage:
- *   SITE_URL=https://example.com npx agentweb-seo
+ *   npx agentweb-seo [options]
+ *
+ * Options:
+ *   --port <n>        Port to listen on (default: 3002)
+ *   --site <url>      Site URL to analyze
+ *   --brand <n>    Brand name
+ *   --help, -h        Show this help
+ *
+ * Env vars (used when flag is not provided):
+ *   PORT, SITE_URL, BRAND_NAME
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -19,9 +29,41 @@ import {
   type VisibilityScore,
 } from "./services/visibility.js";
 
-const PORT = parseInt(process.env.PORT || "3002");
-const SITE_URL = process.env.SITE_URL || "";
-const BRAND_NAME = process.env.BRAND_NAME || "My Brand";
+// ─── CLI Argument Parsing ────────────────────────────────────
+
+const argv = process.argv.slice(2);
+
+if (argv.includes("--help") || argv.includes("-h")) {
+  console.log(`
+  AgentWeb SEO — MCP server for agent discovery analytics
+
+  Usage:
+    npx agentweb-seo [options]
+
+  Options:
+    --port <n>        Port to listen on (default: 3002)
+    --site <url>      Site URL to analyze by default
+    --brand <n>    Brand name shown to agents
+    --help, -h        Show this help
+
+  Environment variables (used when a flag is not provided):
+    PORT, SITE_URL, BRAND_NAME
+
+  Examples:
+    npx agentweb-seo --site https://acme.com --brand "Acme"
+    SITE_URL=https://acme.com npx agentweb-seo
+`);
+  process.exit(0);
+}
+
+function getArg(flag: string): string | undefined {
+  const idx = argv.indexOf(flag);
+  return idx !== -1 && idx + 1 < argv.length ? argv[idx + 1] : undefined;
+}
+
+const PORT = parseInt(getArg("--port") || process.env.PORT || "3002");
+const SITE_URL = getArg("--site") || process.env.SITE_URL || "";
+const BRAND_NAME = getArg("--brand") || process.env.BRAND_NAME || "My Brand";
 
 const queryMonitor = new QueryMonitor();
 

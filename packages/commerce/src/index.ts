@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * AgentWeb Commerce — MCP Server
  *
@@ -6,7 +7,17 @@
  * in formats AI agents can negotiate with.
  *
  * Usage:
- *   CATALOG_FILE=./products.json npx agentweb-commerce
+ *   npx agentweb-commerce [options]
+ *
+ * Options:
+ *   --port <n>           Port to listen on (default: 3001)
+ *   --brand <name>       Brand name
+ *   --catalog <file>     Path to catalog JSON file
+ *   --policies <file>    Path to policies JSON file
+ *   --help, -h           Show this help
+ *
+ * Env vars (used when flag is not provided):
+ *   PORT, BRAND_NAME, CATALOG_FILE, POLICIES_FILE
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -16,21 +27,114 @@ import { z } from "zod";
 import { CatalogStore, CartManager, negotiate, type Product, type NegotiationIntent } from "./services/catalog.js";
 import { PolicyEngine, type PolicyConfig } from "./services/policies.js";
 
+// ─── CLI Argument Parsing ────────────────────────────────────
+
+const argv = process.argv.slice(2);
+
+if (argv.includes("--help") || argv.includes("-h")) {
+  console.log(`
+  AgentWeb Commerce — MCP server for agent-driven commerce
+
+  Usage:
+    npx agentweb-commerce [options]
+
+  Options:
+    --port <n>           Port to listen on (default: 3001)
+    --brand <name>       Brand name shown to agents
+    --catalog <file>     Path to catalog JSON file (falls back to demo catalog)
+    --policies <file>    Path to policies JSON file
+    --help, -h           Show this help
+
+  Environment variables (used when a flag is not provided):
+    PORT, BRAND_NAME, CATALOG_FILE, POLICIES_FILE
+
+  Examples:
+    npx agentweb-commerce --brand "Acme" --catalog ./products.json
+    CATALOG_FILE=./products.json npx agentweb-commerce
+`);
+  process.exit(0);
+}
+
+function getArg(flag: string): string | undefined {
+  const idx = argv.indexOf(flag);
+  return idx !== -1 && idx + 1 < argv.length ? argv[idx + 1] : undefined;
+}
+
 // ─── Configuration ───────────────────────────────────────────
 
-const PORT = parseInt(process.env.PORT || "3001");
-const BRAND_NAME = process.env.BRAND_NAME || "Commerce Store";
+const portArg = getArg("--port");
+const brandArg = getArg("--brand");
+const catalogArg = getArg("--catalog");
+const policiesArg = getArg("--policies");
+
+const PORT = parseInt(portArg || process.env.PORT || "3001");
+const BRAND_NAME = brandArg || process.env.BRAND_NAME || "Commerce Store";
+const CATALOG_FILE = catalogArg || process.env.CATALOG_FILE;
+const POLICIES_FILE = policiesArg || process.env.POLICIES_FILE;
+
+// ─── Demo Products ───────────────────────────────────────────
+
+const DEMO_PRODUCTS: Product[] = [
+  {
+    id: "prod_001", name: "Riviera Linen Blazer", description: "Lightweight linen blazer perfect for warm weather", agentDescription: "Unstructured linen blazer in a relaxed fit. Best for summer events, outdoor weddings, or smart-casual settings. Runs true to size. Pairs well with chinos or tailored shorts.",
+    category: "women", subcategory: "outerwear", price: 185, currency: "USD", availability: "in_stock", stockCount: 42,
+    images: [], url: "https://example.com/products/riviera-blazer", brand: "Acme Fashion",
+    tags: ["blazer", "linen", "summer", "wedding"], attributes: { size: ["XS", "S", "M", "L", "XL"], color: ["Navy", "Cream", "Sage"] },
+    rating: 4.6, reviewCount: 128, sustainable: true, occasions: ["wedding", "business_casual", "summer_event"],
+    relatedProducts: ["prod_002", "prod_005"], createdAt: "2026-03-01", updatedAt: "2026-04-10",
+  },
+  {
+    id: "prod_002", name: "Silk Midi Dress", description: "Flowing silk midi dress", agentDescription: "100% mulberry silk midi dress with a flattering A-line silhouette. Ideal for weddings, date nights, or elevated everyday wear. Has pockets. Dry clean only.",
+    category: "women", subcategory: "dresses", price: 245, currency: "USD", compareAtPrice: 320, availability: "low_stock", stockCount: 8,
+    images: [], url: "https://example.com/products/silk-midi", brand: "Acme Fashion",
+    tags: ["dress", "silk", "midi", "wedding", "sale"], attributes: { size: ["XS", "S", "M", "L"], color: ["Midnight", "Blush", "Emerald"] },
+    rating: 4.8, reviewCount: 89, sustainable: true, occasions: ["wedding", "date_night", "formal"],
+    relatedProducts: ["prod_001", "prod_003"], createdAt: "2026-02-15", updatedAt: "2026-04-08",
+  },
+  {
+    id: "prod_003", name: "Cotton Chinos", description: "Classic cotton chino pants", agentDescription: "Organic cotton chinos with a modern slim fit. Versatile everyday pants that work for office or weekend. Machine washable. Available in 6 colors.",
+    category: "men", subcategory: "pants", price: 89, currency: "USD", availability: "in_stock", stockCount: 156,
+    images: [], url: "https://example.com/products/cotton-chinos", brand: "Acme Fashion",
+    tags: ["chinos", "cotton", "casual", "office"], attributes: { size: ["28", "30", "32", "34", "36", "38"], color: ["Khaki", "Navy", "Olive", "Black", "Stone", "Burgundy"] },
+    rating: 4.5, reviewCount: 312, sustainable: true, occasions: ["casual", "business_casual", "office"],
+    createdAt: "2026-01-10", updatedAt: "2026-04-12",
+  },
+  {
+    id: "prod_004", name: "Cashmere Crewneck", description: "Grade-A cashmere sweater", agentDescription: "Ultra-soft Grade-A Mongolian cashmere crewneck. Lightweight enough for layering, warm enough for winter. Hand wash recommended. Timeless staple.",
+    category: "women", subcategory: "knitwear", price: 195, currency: "USD", availability: "in_stock", stockCount: 67,
+    images: [], url: "https://example.com/products/cashmere-crew", brand: "Acme Fashion",
+    tags: ["cashmere", "sweater", "knitwear", "luxury"], attributes: { size: ["XS", "S", "M", "L", "XL"], color: ["Camel", "Black", "Heather Grey", "Ivory"] },
+    rating: 4.9, reviewCount: 201, sustainable: false, occasions: ["casual", "office", "date_night"],
+    createdAt: "2025-10-20", updatedAt: "2026-03-15",
+  },
+  {
+    id: "prod_005", name: "Canvas Tote Bag", description: "Oversized canvas tote", agentDescription: "Heavy-duty organic canvas tote with leather handles. Fits a 15-inch laptop. Interior zip pocket. Great for everyday carry or beach days.",
+    category: "accessories", subcategory: "bags", price: 65, currency: "USD", availability: "in_stock", stockCount: 234,
+    images: [], url: "https://example.com/products/canvas-tote", brand: "Acme Fashion",
+    tags: ["bag", "tote", "canvas", "everyday"], attributes: { color: ["Natural", "Black", "Navy"] },
+    rating: 4.4, reviewCount: 178, sustainable: true, occasions: ["casual", "travel", "beach"],
+    createdAt: "2026-02-01", updatedAt: "2026-04-05",
+  },
+  {
+    id: "prod_006", name: "Leather Chelsea Boots", description: "Classic leather chelsea boots", agentDescription: "Full-grain leather Chelsea boots with elastic side panels and rubber sole. Break-in period of about a week. Resoleable. Goes with everything from jeans to suits.",
+    category: "shoes", subcategory: "boots", price: 225, currency: "USD", availability: "in_stock", stockCount: 45,
+    images: [], url: "https://example.com/products/chelsea-boots", brand: "Acme Fashion",
+    tags: ["boots", "leather", "chelsea", "classic"], attributes: { size: ["7", "8", "9", "10", "11", "12", "13"], color: ["Black", "Brown", "Tan"] },
+    rating: 4.7, reviewCount: 156, sustainable: false, occasions: ["business", "casual", "date_night"],
+    createdAt: "2025-09-01", updatedAt: "2026-04-01",
+  },
+];
 
 // Load catalog
 const catalog = new CatalogStore();
 const cartManager = new CartManager(catalog);
 
-if (process.env.CATALOG_FILE) {
+if (CATALOG_FILE) {
   try {
     const fs = await import("fs");
-    const products: Product[] = JSON.parse(fs.readFileSync(process.env.CATALOG_FILE, "utf-8"));
+    const products: Product[] = JSON.parse(fs.readFileSync(CATALOG_FILE, "utf-8"));
     catalog.load(products);
-    console.error(`Loaded ${products.length} products from ${process.env.CATALOG_FILE}`);
+    console.error(`Loaded ${products.length} products from ${CATALOG_FILE}`);
   } catch (e) {
     console.error(`Warning: Could not load catalog: ${e}`);
   }
@@ -42,10 +146,10 @@ if (process.env.CATALOG_FILE) {
 
 // Load policies
 let policyConfig: Partial<PolicyConfig> = {};
-if (process.env.POLICIES_FILE) {
+if (POLICIES_FILE) {
   try {
     const fs = await import("fs");
-    policyConfig = JSON.parse(fs.readFileSync(process.env.POLICIES_FILE, "utf-8"));
+    policyConfig = JSON.parse(fs.readFileSync(POLICIES_FILE, "utf-8"));
   } catch (e) {
     console.error(`Warning: Could not load policies: ${e}`);
   }
@@ -377,59 +481,6 @@ function formatCart(cart: import("./services/catalog.js").Cart): string {
 
   return result;
 }
-
-// ─── Demo Products ───────────────────────────────────────────
-
-const DEMO_PRODUCTS: Product[] = [
-  {
-    id: "prod_001", name: "Riviera Linen Blazer", description: "Lightweight linen blazer perfect for warm weather", agentDescription: "Unstructured linen blazer in a relaxed fit. Best for summer events, outdoor weddings, or smart-casual settings. Runs true to size. Pairs well with chinos or tailored shorts.",
-    category: "women", subcategory: "outerwear", price: 185, currency: "USD", availability: "in_stock", stockCount: 42,
-    images: [], url: "https://example.com/products/riviera-blazer", brand: "Acme Fashion",
-    tags: ["blazer", "linen", "summer", "wedding"], attributes: { size: ["XS", "S", "M", "L", "XL"], color: ["Navy", "Cream", "Sage"] },
-    rating: 4.6, reviewCount: 128, sustainable: true, occasions: ["wedding", "business_casual", "summer_event"],
-    relatedProducts: ["prod_002", "prod_005"], createdAt: "2026-03-01", updatedAt: "2026-04-10",
-  },
-  {
-    id: "prod_002", name: "Silk Midi Dress", description: "Flowing silk midi dress", agentDescription: "100% mulberry silk midi dress with a flattering A-line silhouette. Ideal for weddings, date nights, or elevated everyday wear. Has pockets. Dry clean only.",
-    category: "women", subcategory: "dresses", price: 245, currency: "USD", compareAtPrice: 320, availability: "low_stock", stockCount: 8,
-    images: [], url: "https://example.com/products/silk-midi", brand: "Acme Fashion",
-    tags: ["dress", "silk", "midi", "wedding", "sale"], attributes: { size: ["XS", "S", "M", "L"], color: ["Midnight", "Blush", "Emerald"] },
-    rating: 4.8, reviewCount: 89, sustainable: true, occasions: ["wedding", "date_night", "formal"],
-    relatedProducts: ["prod_001", "prod_003"], createdAt: "2026-02-15", updatedAt: "2026-04-08",
-  },
-  {
-    id: "prod_003", name: "Cotton Chinos", description: "Classic cotton chino pants", agentDescription: "Organic cotton chinos with a modern slim fit. Versatile everyday pants that work for office or weekend. Machine washable. Available in 6 colors.",
-    category: "men", subcategory: "pants", price: 89, currency: "USD", availability: "in_stock", stockCount: 156,
-    images: [], url: "https://example.com/products/cotton-chinos", brand: "Acme Fashion",
-    tags: ["chinos", "cotton", "casual", "office"], attributes: { size: ["28", "30", "32", "34", "36", "38"], color: ["Khaki", "Navy", "Olive", "Black", "Stone", "Burgundy"] },
-    rating: 4.5, reviewCount: 312, sustainable: true, occasions: ["casual", "business_casual", "office"],
-    createdAt: "2026-01-10", updatedAt: "2026-04-12",
-  },
-  {
-    id: "prod_004", name: "Cashmere Crewneck", description: "Grade-A cashmere sweater", agentDescription: "Ultra-soft Grade-A Mongolian cashmere crewneck. Lightweight enough for layering, warm enough for winter. Hand wash recommended. Timeless staple.",
-    category: "women", subcategory: "knitwear", price: 195, currency: "USD", availability: "in_stock", stockCount: 67,
-    images: [], url: "https://example.com/products/cashmere-crew", brand: "Acme Fashion",
-    tags: ["cashmere", "sweater", "knitwear", "luxury"], attributes: { size: ["XS", "S", "M", "L", "XL"], color: ["Camel", "Black", "Heather Grey", "Ivory"] },
-    rating: 4.9, reviewCount: 201, sustainable: false, occasions: ["casual", "office", "date_night"],
-    createdAt: "2025-10-20", updatedAt: "2026-03-15",
-  },
-  {
-    id: "prod_005", name: "Canvas Tote Bag", description: "Oversized canvas tote", agentDescription: "Heavy-duty organic canvas tote with leather handles. Fits a 15-inch laptop. Interior zip pocket. Great for everyday carry or beach days.",
-    category: "accessories", subcategory: "bags", price: 65, currency: "USD", availability: "in_stock", stockCount: 234,
-    images: [], url: "https://example.com/products/canvas-tote", brand: "Acme Fashion",
-    tags: ["bag", "tote", "canvas", "everyday"], attributes: { color: ["Natural", "Black", "Navy"] },
-    rating: 4.4, reviewCount: 178, sustainable: true, occasions: ["casual", "travel", "beach"],
-    createdAt: "2026-02-01", updatedAt: "2026-04-05",
-  },
-  {
-    id: "prod_006", name: "Leather Chelsea Boots", description: "Classic leather chelsea boots", agentDescription: "Full-grain leather Chelsea boots with elastic side panels and rubber sole. Break-in period of about a week. Resoleable. Goes with everything from jeans to suits.",
-    category: "shoes", subcategory: "boots", price: 225, currency: "USD", availability: "in_stock", stockCount: 45,
-    images: [], url: "https://example.com/products/chelsea-boots", brand: "Acme Fashion",
-    tags: ["boots", "leather", "chelsea", "classic"], attributes: { size: ["7", "8", "9", "10", "11", "12", "13"], color: ["Black", "Brown", "Tan"] },
-    rating: 4.7, reviewCount: 156, sustainable: false, occasions: ["business", "casual", "date_night"],
-    createdAt: "2025-09-01", updatedAt: "2026-04-01",
-  },
-];
 
 // ─── HTTP Server ─────────────────────────────────────────────
 
