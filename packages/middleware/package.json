@@ -1,6 +1,6 @@
 {
   "name": "@agentweb-dev/middleware",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent Middleware — the Cloudflare for the agent web. Makes any website agent-consumable via MCP proxy.",
   "main": "dist/index.js",
   "bin": {

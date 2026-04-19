@@ -29,5 +29,8 @@
     "type": "git",
     "url": "https://github.com/ashpfeif12/agentweb",
     "directory": "packages/generator"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   }
 }

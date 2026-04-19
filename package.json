@@ -32,5 +32,9 @@
   "homepage": "https://github.com/ashpfeif12/agentweb",
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "dependencies": {
+    "tsx": "^4.21.0"
+  },
+  "type": "module"
 }
