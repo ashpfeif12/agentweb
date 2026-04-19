@@ -51,9 +51,9 @@ Six packages. All open source. Published to npm.
 
 | Package | Purpose | Status |
 |---------|---------|--------|
-| `@agentweb/spec` | agent.json spec + JSON Schema + TypeScript types | In repo |
-| `@agentweb/scorer` | Agent readiness scorer CLI | In repo |
-| `@agentweb/generator` | OpenAPI → deployable MCP server | In repo |
+| `@agentweb-dev/spec` | agent.json spec + JSON Schema + TypeScript types | In repo |
+| `@agentweb-dev/scorer` | Agent readiness scorer CLI | In repo |
+| `@agentweb-dev/generator` | OpenAPI → deployable MCP server | In repo |
 | `@agentweb-dev/middleware` | MCP proxy that makes any site agent-consumable | Published |
 | `@agentweb-dev/commerce` | Structured catalog, cart, and agent-to-agent negotiation | Published |
 | `@agentweb-dev/seo` | Agent visibility analytics and optimization | Published |

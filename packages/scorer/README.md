@@ -1,4 +1,4 @@
-# @agentweb/scorer
+# @agentweb-dev/scorer
 
 Score any website on **agent readiness** (0–100) with actionable recommendations.
 
@@ -49,7 +49,7 @@ npx agentweb score https://example.com --output report.json
 ### Programmatic
 
 ```typescript
-import { score, formatReport } from '@agentweb/scorer';
+import { score, formatReport } from '@agentweb-dev/scorer';
 
 const siteData = await crawl('https://example.com');
 const report = score(siteData);

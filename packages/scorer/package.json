@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/scorer",
+  "name": "@agentweb-dev/scorer",
   "version": "1.0.0",
   "description": "Agent readiness scorer — analyze any website and get an agent-readiness score (0-100) with actionable recommendations.",
   "main": "dist/index.js",

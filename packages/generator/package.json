@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/generator",
+  "name": "@agentweb-dev/generator",
   "version": "1.0.0",
   "description": "MCP server generator — auto-generate deployable MCP servers from OpenAPI, GraphQL, or existing websites.",
   "main": "dist/index.js",

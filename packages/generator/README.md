@@ -1,4 +1,4 @@
-# @agentweb/generator
+# @agentweb-dev/generator
 
 Auto-generate deployable MCP servers from existing APIs.
 

@@ -1,4 +1,4 @@
-# @agentweb/spec
+# @agentweb-dev/spec
 
 The **agent.json** specification — an open standard for describing what a website or service offers to AI agents.
 
@@ -30,7 +30,7 @@ That's the minimum. Four fields. Takes 2 minutes.
 ### 2. Validate it
 
 ```bash
-npx @agentweb/spec validate ./agent.json
+npx @agentweb-dev/spec validate ./agent.json
 ```
 
 ### 3. Add more sections as needed
@@ -87,7 +87,7 @@ The validator checks:
 Plus quality warnings for missing-but-recommended sections.
 
 ```typescript
-import { validate, formatIssues } from '@agentweb/spec';
+import { validate, formatIssues } from '@agentweb-dev/spec';
 
 const result = validate(myAgentJson);
 if (!result.valid) {

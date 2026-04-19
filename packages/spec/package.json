@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/spec",
+  "name": "@agentweb-dev/spec",
   "version": "1.0.0",
   "description": "agent.json specification — JSON Schema, TypeScript types, and validation for Agent-Ready Syndication (ARS) manifests.",
   "main": "dist/index.js",
