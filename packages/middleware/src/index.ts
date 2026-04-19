@@ -212,13 +212,130 @@ server.registerTool(
   }
 );
 
+// ─── Search: Page index ─────────────────────────────────────
+
+interface IndexedPage {
+  title: string;
+  description: string;
+  url: string;
+  content: string;
+}
+
+let pageIndex: IndexedPage[] = [];
+let indexBuilt = false;
+
+async function buildPageIndex(): Promise<void> {
+  if (indexBuilt) return;
+
+  const pages: IndexedPage[] = [];
+  const seen = new Set<string>();
+
+  function addPage(data: { title: string; description: string; content: string; url: string }) {
+    if (seen.has(data.url)) return;
+    seen.add(data.url);
+    pages.push({
+      title: data.title,
+      description: data.description,
+      url: data.url,
+      content: data.content.substring(0, 2000),
+    });
+  }
+
+  // 1. Try sitemap
+  try {
+    const sitemapRes = await fetch(`${config.origin}/sitemap.xml`, {
+      headers: { "User-Agent": "AgentWeb-Middleware/0.1 (+https://agentweb.dev)" },
+      redirect: "follow",
+    });
+    if (sitemapRes.ok) {
+      const sitemapXml = await sitemapRes.text();
+      const urlMatches = sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/gi);
+      const sitemapUrls: string[] = [];
+      for (const m of urlMatches) {
+        if (m[1]) sitemapUrls.push(m[1]);
+      }
+      // Fetch up to 15 pages from sitemap for indexing
+      const toFetch = sitemapUrls.slice(0, 15);
+      const results = await Promise.allSettled(
+        toFetch.map(async (url) => {
+          const data = await fetchStructured(url);
+          addPage({ ...data, url });
+        })
+      );
+    }
+  } catch { /* sitemap not available, continue */ }
+
+  // 2. Always index the homepage and common pages
+  const commonPaths = ["/", "/about", "/pricing", "/products", "/features", "/docs", "/blog"];
+  for (const path of commonPaths) {
+    if (seen.has(`${config.origin}${path}`)) continue;
+    try {
+      const data = await fetchStructured(path);
+      addPage({ ...data, url: `${config.origin}${path}` });
+    } catch { /* page doesn't exist, skip */ }
+  }
+
+  // 3. Follow links from the homepage to discover more pages
+  try {
+    const homepage = await fetchStructured("/");
+    const internalLinks = homepage.links
+      .filter(l => {
+        const href = l.href;
+        return (href.startsWith("/") || href.startsWith(config.origin)) && !href.includes("#");
+      })
+      .slice(0, 10);
+    for (const link of internalLinks) {
+      const url = link.href.startsWith("http") ? link.href : `${config.origin}${link.href}`;
+      if (seen.has(url)) continue;
+      try {
+        const data = await fetchStructured(link.href);
+        addPage({ ...data, url });
+      } catch { /* skip broken links */ }
+    }
+  } catch { /* homepage already handled */ }
+
+  pageIndex = pages;
+  indexBuilt = true;
+}
+
+function searchIndex(query: string, limit: number): Array<{ title: string; description: string; url: string; score: number }> {
+  const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+
+  const scored = pageIndex.map(page => {
+    let score = 0;
+    const titleLower = page.title.toLowerCase();
+    const descLower = page.description.toLowerCase();
+    const contentLower = page.content.toLowerCase();
+    const urlLower = page.url.toLowerCase();
+
+    for (const term of terms) {
+      // Title matches are most valuable
+      if (titleLower.includes(term)) score += 10;
+      // URL path matches are strong signals
+      if (urlLower.includes(term)) score += 8;
+      // Description matches
+      if (descLower.includes(term)) score += 5;
+      // Content matches
+      const contentMatches = (contentLower.match(new RegExp(term, "g")) || []).length;
+      score += Math.min(contentMatches, 5); // cap at 5 per term
+    }
+
+    return { title: page.title, description: page.description, url: page.url, score };
+  });
+
+  return scored
+    .filter(r => r.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
+
 // ─── Tool: Search site ───────────────────────────────────────
 
 server.registerTool(
   "search_site",
   {
     title: `Search ${siteName}`,
-    description: `Search for content on ${siteName}. Returns matching pages with titles and descriptions. Use this when looking for specific information, products, or pages.`,
+    description: `Search for content on ${siteName}. Crawls the sitemap and key pages to find relevant results by matching against page titles, descriptions, URLs, and content. Use this when looking for specific information, products, or pages.`,
     inputSchema: {
       query: z.string().min(1).describe("Search query — what are you looking for?"),
       limit: z.number().int().min(1).max(20).default(5).describe("Maximum number of results"),
@@ -233,19 +350,8 @@ server.registerTool(
   async ({ query, limit }) => {
     const start = Date.now();
     try {
-      // Fetch the site's sitemap or main page to find relevant content
-      const mainPage = await fetchStructured("/");
-      const links = mainPage.links;
-
-      // Simple text matching against page titles and link text
-      const queryLower = query.toLowerCase();
-      const matches = links
-        .filter(l => l.text.toLowerCase().includes(queryLower) || l.href.toLowerCase().includes(queryLower))
-        .slice(0, limit)
-        .map(l => ({
-          title: l.text,
-          url: l.href.startsWith("http") ? l.href : `${config.origin}${l.href}`,
-        }));
+      await buildPageIndex();
+      const matches = searchIndex(query, limit);
 
       analytics.track({
         timestamp: Date.now(), agentId: "unknown", tool: "search_site",
@@ -255,11 +361,15 @@ server.registerTool(
       });
 
       if (matches.length === 0) {
-        return { content: [{ type: "text" as const, text: `No results found for "${query}" on ${siteName}. Try a broader search or browse the site directly.` }] };
+        return { content: [{ type: "text" as const, text: `No results found for "${query}" on ${siteName}. The site index covers ${pageIndex.length} pages. Try a broader search or browse the site directly.` }] };
       }
 
-      const result = `Found ${matches.length} results for "${query}" on ${siteName}:\n\n` +
-        matches.map((m, i) => `${i + 1}. **${m.title}**\n   ${m.url}`).join("\n\n");
+      let result = `Found ${matches.length} results for "${query}" on ${siteName} (${pageIndex.length} pages indexed):\n\n`;
+      for (const [i, m] of matches.entries()) {
+        result += `${i + 1}. **${m.title}**\n`;
+        if (m.description) result += `   ${m.description.substring(0, 150)}\n`;
+        result += `   ${m.url}\n\n`;
+      }
 
       return { content: [{ type: "text" as const, text: result }] };
     } catch (e) {
@@ -368,8 +478,42 @@ server.registerTool(
         result += policies.terms_url ? `**Terms of Service:** ${policies.terms_url}\n` : "";
       }
     } else {
-      result += "No agent.json found for this site. Policies are not machine-readable.\n";
-      result += `Try browsing ${config.origin}/terms or ${config.origin}/privacy for human-readable policies.\n`;
+      // No agent.json — try to auto-detect policy pages
+      result += "No agent.json found. Attempting to discover policy pages automatically.\n\n";
+
+      const policyPaths: Record<string, string[]> = {
+        terms: ["/terms", "/terms-of-service", "/tos", "/legal/terms"],
+        privacy: ["/privacy", "/privacy-policy", "/legal/privacy"],
+        returns: ["/returns", "/return-policy", "/refund-policy", "/shipping-returns"],
+        shipping: ["/shipping", "/shipping-policy", "/delivery"],
+      };
+
+      const typesToCheck = policy_type === "all"
+        ? Object.keys(policyPaths)
+        : [policy_type].filter(t => t in policyPaths);
+
+      for (const pType of typesToCheck) {
+        const paths = policyPaths[pType] || [];
+        let found = false;
+        for (const path of paths) {
+          try {
+            const content = await fetchOrigin(path);
+            if (content && content.length > 100) {
+              result += `**${pType.charAt(0).toUpperCase() + pType.slice(1)}** (auto-detected from ${config.origin}${path}):\n`;
+              result += content.substring(0, 1500) + (content.length > 1500 ? "\n... [truncated]" : "") + "\n\n";
+              found = true;
+              break;
+            }
+          } catch { /* path doesn't exist */ }
+        }
+        if (!found && (policy_type === "all" || policy_type === pType)) {
+          result += `**${pType.charAt(0).toUpperCase() + pType.slice(1)}:** Could not find a ${pType} page. Tried: ${paths.join(", ")}\n\n`;
+        }
+      }
+
+      if (policy_type === "rate_limits") {
+        result += "**Rate Limits:** No agent.json available. Rate limit policies are not discoverable without a manifest.\n";
+      }
     }
 
     return { content: [{ type: "text" as const, text: result }] };
@@ -426,8 +570,47 @@ server.registerTool(
         }
       }
     } else {
-      result += `No agent.json available. This site has not declared its capabilities for agents.\n`;
-      result += `Origin: ${config.origin}\n`;
+      // No agent.json — auto-detect brand info from the site
+      result += "No agent.json available. Auto-detecting brand information from the site.\n\n";
+
+      // Get homepage info
+      try {
+        const homepage = await fetchStructured("/");
+        result += `**Site Title:** ${homepage.title}\n`;
+        if (homepage.description) result += `**Description:** ${homepage.description}\n`;
+        result += "\n";
+
+        // Check for structured data on homepage (Organization, WebSite, etc.)
+        for (const sd of homepage.structuredData) {
+          const type = sd["@type"] as string | string[] | undefined;
+          const typeStr = Array.isArray(type) ? type.join(", ") : type;
+          if (typeStr && ["Organization", "WebSite", "Corporation", "LocalBusiness"].some(t => typeStr.includes(t))) {
+            if (sd.name) result += `**Organization:** ${sd.name}\n`;
+            if (sd.description) result += `**About:** ${sd.description}\n`;
+            if (sd.url) result += `**URL:** ${sd.url}\n`;
+            if (sd.logo) {
+              const logoUrl = typeof sd.logo === "object" ? (sd.logo as Record<string, unknown>).url : sd.logo;
+              if (logoUrl) result += `**Logo:** ${logoUrl}\n`;
+            }
+            if (sd.sameAs && Array.isArray(sd.sameAs)) {
+              result += `**Social:** ${(sd.sameAs as string[]).join(", ")}\n`;
+            }
+            result += "\n";
+          }
+        }
+      } catch { /* homepage fetch failed, continue */ }
+
+      // Try /about page
+      try {
+        const aboutContent = await fetchOrigin("/about");
+        if (aboutContent && aboutContent.length > 100) {
+          result += `**About page** (auto-detected from ${config.origin}/about):\n`;
+          result += aboutContent.substring(0, 1000) + (aboutContent.length > 1000 ? "\n... [truncated]" : "") + "\n\n";
+        }
+      } catch { /* no about page */ }
+
+      result += `**Origin:** ${config.origin}\n`;
+      result += `**Note:** This site has not published an agent.json manifest. Brand voice guidelines, capabilities, and endpoints are not declared.\n`;
     }
 
     return { content: [{ type: "text" as const, text: result }] };
