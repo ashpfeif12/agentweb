@@ -1,0 +1,24 @@
+{
+  "name": "@agentweb/commerce",
+  "version": "0.1.0",
+  "description": "Agent Commerce Platform — the Shopify for agent-driven commerce. Structured catalogs, policies, and negotiation for AI agents.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "express": "^5.1.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "tsx": "^4.21.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^5.0.0"
+  },
+  "engines": { "node": ">=20.0.0" },
+  "license": "MIT"
+}
