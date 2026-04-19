@@ -28,3 +28,99 @@ The web was built for browsers. AI agents are the next consumer — but they can
 Drop an agent.json at your domain root. It tells agents what you do and how to interact. Four required fields. Two minutes to create.
 
 ```json
+{
+  "name": "Acme Fashion",
+  "spec_version": "1.0",
+  "description": "Premium fashion retailer with women's and men's collections.",
+  "capabilities": [
+    { "name": "search_products", "type": "query" },
+    { "name": "place_order", "type": "action" }
+  ],
+  "brand_voice": {
+    "tone": "warm, knowledgeable, never pushy"
+  },
+  "endpoints": {
+    "mcp": "https://mcp.acmefashion.com/sse"
+  }
+}
+```
+
+## The Stack
+
+Six packages. All open source. Published to npm.
+
+| Package | Purpose | Status |
+|---------|---------|--------|
+| `@agentweb/spec` | agent.json spec + JSON Schema + TypeScript types | In repo |
+| `@agentweb/scorer` | Agent readiness scorer CLI | In repo |
+| `@agentweb/generator` | OpenAPI → deployable MCP server | In repo |
+| `@agentweb-dev/middleware` | MCP proxy that makes any site agent-consumable | Published |
+| `@agentweb-dev/commerce` | Structured catalog, cart, and agent-to-agent negotiation | Published |
+| `@agentweb-dev/seo` | Agent visibility analytics and optimization | Published |
+
+## Quick Start
+
+### Score your site
+
+```bash
+npx agentweb score https://yoursite.com
+```
+
+### Generate a starter agent.json
+
+```bash
+npx agentweb init --industry retail --output agent.json
+```
+
+### Proxy your site as an MCP server (middleware)
+
+```bash
+npx @agentweb-dev/middleware --origin https://yoursite.com
+```
+
+Exposes your site on `http://localhost:3000/mcp` with tools for browsing, structured data extraction, policy lookup, and human escalation.
+
+### Run a commerce MCP server
+
+```bash
+npx @agentweb-dev/commerce --brand "Acme" --catalog ./products.json
+```
+
+Starts an agent-negotiable commerce endpoint on `http://localhost:3001/mcp`. Runs with a built-in demo catalog if no file is provided.
+
+### Run agent SEO analytics
+
+```bash
+npx @agentweb-dev/seo --site https://yoursite.com --brand "Acme"
+```
+
+Exposes agent visibility scoring, query pattern analytics, and competitive analysis on `http://localhost:3002/mcp`.
+
+Each CLI supports `--help` for full options, and every flag has an environment variable equivalent (e.g. `ORIGIN_URL`, `CATALOG_FILE`, `SITE_URL`).
+
+## Generate an MCP server from an API spec
+
+Point the generator at any OpenAPI spec and get a deployable MCP server:
+
+```bash
+npx agentweb generate --from openapi.yaml --output ./mcp-server
+```
+
+Outputs a complete TypeScript package with typed tools, authentication handling, an auto-generated agent.json manifest, and a Dockerfile.
+
+## Development
+
+This is an npm workspace monorepo. To work on it locally:
+
+```bash
+git clone https://github.com/ashpfeif12/agentweb.git
+cd agentweb
+npm install
+cd packages/commerce && npm run build
+```
+
+Replace `commerce` with `seo` or `middleware` to build the others. Each package is independently buildable and publishable.
+
+## License
+
+MIT — see LICENSE file.
