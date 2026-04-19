@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/commerce",
+  "name": "@agentweb-dev/commerce",
   "version": "0.1.0",
   "description": "Agent Commerce Platform — the Shopify for agent-driven commerce. Structured catalogs, policies, and negotiation for AI agents.",
   "main": "dist/index.js",
@@ -26,5 +26,18 @@
     "node": ">=20.0.0"
   },
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashpfeif12/agentweb.git",
+    "directory": "packages/commerce"
+  },
+  "homepage": "https://github.com/ashpfeif12/agentweb#readme",
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

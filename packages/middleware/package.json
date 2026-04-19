@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/middleware",
+  "name": "@agentweb-dev/middleware",
   "version": "0.1.0",
   "description": "Agent Middleware — the Cloudflare for the agent web. Makes any website agent-consumable via MCP proxy.",
   "main": "dist/index.js",
@@ -26,5 +26,18 @@
     "node": ">=20.0.0"
   },
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashpfeif12/agentweb.git",
+    "directory": "packages/middleware"
+  },
+  "homepage": "https://github.com/ashpfeif12/agentweb#readme",
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }

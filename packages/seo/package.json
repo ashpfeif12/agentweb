@@ -1,5 +1,5 @@
 {
-  "name": "@agentweb/seo",
+  "name": "@agentweb-dev/seo",
   "version": "0.1.0",
   "description": "Agent SEO — the Moz for agent discovery. Analytics and optimization for how AI agents find and recommend your brand.",
   "main": "dist/index.js",
@@ -26,5 +26,18 @@
     "node": ">=20.0.0"
   },
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashpfeif12/agentweb.git",
+    "directory": "packages/seo"
+  },
+  "homepage": "https://github.com/ashpfeif12/agentweb#readme",
+  "files": [
+    "dist",
+    "README.md"
+  ]
 }
